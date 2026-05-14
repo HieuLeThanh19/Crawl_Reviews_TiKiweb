@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # ── PostgreSQL Database ─────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: tiki_reviews
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/setup_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── RabbitMQ Message Queue ──────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # Management UI tại http://localhost:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ── Redis Cache ─────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── ETL Worker ──────────────────────────────────────────────────────────────
+  worker:
+    build: .
+    command: python -m etl.pipeline worker
+    environment:
+      DB_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    restart: unless-stopped
+    deploy:
+      replicas: 2  # Chạy 2 worker song song
+
+  # ── Crawler (chạy một lần theo nhu cầu) ────────────────────────────────────
+  crawler:
+    build: .
+    command: python -m crawler.tiki_crawler --product-id ${PRODUCT_ID:-ABC001} --max-pages 100
+    environment:
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    profiles:
+      - crawl  # Chỉ chạy khi: docker compose --profile crawl up crawler
+
+  # ── REST API ─────────────────────────────────────────────────────────────────
+  api:
+    build: .
+    command: uvicorn api.app:app --host 0.0.0.0 --port 8000 --workers 4
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      API_SECRET_KEY: ${API_SECRET_KEY:-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

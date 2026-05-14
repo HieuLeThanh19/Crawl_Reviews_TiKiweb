@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.coveragerc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+*.env.local
+
+# Logs
+logs/
+*.log
+
+# Backups
+backups/
+
+# Models (LDA, embeddings - có thể lớn)
+models/
+*.model
+*.index
+
+# Data output
+*.json
+reviews_*.json
+!scripts/
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Scrapy
+.scrapy/

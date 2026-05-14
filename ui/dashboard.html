@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tiki Review Collector</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #667085;
+      --line: #d8dee9;
+      --blue: #0b74de;
+      --blue-dark: #075eb4;
+      --green: #0f8f5f;
+      --orange: #b76e00;
+      --red: #b42318;
+      --soft-blue: #eef6ff;
+      --soft-green: #ecfdf3;
+      --soft-orange: #fff6e5;
+      --soft-red: #fff1f0;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      height: 58px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand { font-weight: 700; font-size: 18px; white-space: nowrap; }
+    .brand span { color: var(--blue); }
+    .status { font-size: 13px; color: var(--muted); text-align: right; }
+    main { max-width: 1320px; margin: 0 auto; padding: 22px; }
+
+    .toolbar {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) 150px 135px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input, select, button {
+      min-height: 40px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    input, select { padding: 0 12px; background: #fff; color: var(--text); }
+    input:focus, select:focus {
+      outline: 2px solid rgba(11, 116, 222, 0.18);
+      border-color: var(--blue);
+    }
+
+    button {
+      padding: 0 14px;
+      cursor: pointer;
+      font-weight: 600;
+      background: #eef4ff;
+      color: var(--blue);
+      border-color: #bfd7ff;
+    }
+
+    button.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    button.primary:hover { background: var(--blue-dark); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .layout {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 430px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      min-height: 66px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title { font-weight: 700; line-height: 1.35; }
+    .panel-sub { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+    .panel-body { padding: 14px 16px; }
+
+    .products {
+      display: grid;
+      gap: 10px;
+      max-height: calc(100vh - 210px);
+      overflow: auto;
+      padding: 12px;
+    }
+
+    .product {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 12px;
+    }
+
+    .product.selected {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(11, 116, 222, .12);
+    }
+
+    .thumb {
+      width: 74px;
+      height: 74px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f2f4f7;
+    }
+
+    .product-name { font-weight: 700; line-height: 1.35; margin-bottom: 6px; }
+    .meta { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    code {
+      background: #f2f4f7;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: #111827;
+      white-space: nowrap;
+    }
+
+    .product-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+      min-height: 74px;
+    }
+
+    .stat-value { font-size: 22px; font-weight: 800; }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+
+    .classification {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .class-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      background: #fff;
+    }
+
+    .class-card.good { background: var(--soft-green); border-color: #b7ebc6; }
+    .class-card.neutral { background: var(--soft-orange); border-color: #f4d59b; }
+    .class-card.bad { background: var(--soft-red); border-color: #ffc9c4; }
+    .class-label { font-size: 12px; color: var(--muted); }
+    .class-value { font-size: 20px; font-weight: 800; margin-top: 4px; }
+
+    .rating-table {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+
+    .rating-row {
+      display: grid;
+      grid-template-columns: 72px 1fr 72px;
+      gap: 10px;
+      align-items: center;
+      min-height: 34px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .rating-row:last-child { border-bottom: 0; }
+    .bar {
+      height: 8px;
+      background: #edf1f5;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+      border-radius: inherit;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th { background: #f8fafc; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    .review-title { font-weight: 700; margin-bottom: 5px; }
+    .review-content { color: #374151; line-height: 1.45; white-space: pre-line; }
+    .stars { white-space: nowrap; color: #b76e00; font-weight: 700; letter-spacing: 0; }
+    .helpful { color: var(--muted); font-size: 12px; margin-top: 4px; line-height: 1.35; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 2px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #fff;
+      white-space: nowrap;
+    }
+    .badge.good { color: var(--green); background: var(--soft-green); border-color: #b7ebc6; }
+    .badge.neutral { color: var(--orange); background: var(--soft-orange); border-color: #f4d59b; }
+    .badge.bad { color: var(--red); background: var(--soft-red); border-color: #ffc9c4; }
+    .empty { padding: 24px; color: var(--muted); text-align: center; }
+    .message { margin-top: 12px; font-size: 13px; color: var(--muted); min-height: 18px; }
+    .message.error { color: var(--red); }
+    .message.ok { color: var(--green); }
+    .pager { display: flex; gap: 8px; justify-content: flex-end; padding-top: 12px; }
+
+    @media (max-width: 1080px) {
+      .toolbar { grid-template-columns: 1fr; }
+      .layout { grid-template-columns: 1fr; }
+      .products { max-height: none; }
+    }
+
+    @media (max-width: 720px) {
+      header { padding: 0 14px; }
+      main { padding: 14px; }
+      .summary-grid, .classification { grid-template-columns: 1fr 1fr; }
+      .product { grid-template-columns: 64px 1fr; }
+      .thumb { width: 64px; height: 64px; }
+      th:nth-child(1), td:nth-child(1) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Tiki <span>Review Collector</span></div>
+    <div class="status" id="health">Đang kiểm tra hệ thống...</div>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <input id="query" placeholder="Nhập tên sản phẩm, link Tiki hoặc product_id" value="iphone">
+      <select id="category">
+        <option value="1789">Điện thoại</option>
+        <option value="1846">Laptop</option>
+        <option value="1815">Phụ kiện</option>
+        <option value="8322">Nhà sách</option>
+        <option value="">Tất cả ngành hàng</option>
+      </select>
+      <button class="primary" id="searchBtn">Tìm sản phẩm</button>
+    </section>
+
+    <div class="message" id="message"></div>
+
+    <section class="layout">
+      <aside class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Sản phẩm và ID</div>
+            <div class="panel-sub">Chọn đúng product_id trước khi crawl review thật từ Tiki.</div>
+          </div>
+          <span class="panel-sub" id="productCount">0</span>
+        </div>
+        <div class="products" id="products"></div>
+      </aside>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title" id="selectedName">Chưa chọn sản phẩm</div>
+            <div class="panel-sub" id="selectedMeta">Tìm theo tên, dán link Tiki hoặc nhập thẳng product_id.</div>
+          </div>
+          <button class="primary" id="crawlBtn" disabled>Crawl review</button>
+        </div>
+        <div class="panel-body">
+          <div class="summary-grid">
+            <div class="stat"><div class="stat-value" id="sTotal">0</div><div class="stat-label">Review đã lưu</div></div>
+            <div class="stat"><div class="stat-value" id="sAvg">0.0</div><div class="stat-label">Sao trung bình local</div></div>
+            <div class="stat"><div class="stat-value" id="sTiki">0</div><div class="stat-label">Review Tiki báo</div></div>
+            <div class="stat"><div class="stat-value" id="sPages">3</div><div class="stat-label">Trang crawl mỗi lần</div></div>
+          </div>
+
+          <div class="classification">
+            <div class="class-card good"><div class="class-label">Tích cực (4-5 sao)</div><div class="class-value" id="cGood">0</div></div>
+            <div class="class-card neutral"><div class="class-label">Trung lập (3 sao)</div><div class="class-value" id="cNeutral">0</div></div>
+            <div class="class-card bad"><div class="class-label">Tiêu cực (1-2 sao)</div><div class="class-value" id="cBad">0</div></div>
+          </div>
+
+          <div class="rating-table" id="ratingBreakdown"></div>
+
+          <div class="filters">
+            <select id="classFilter">
+              <option value="">Tất cả phân loại</option>
+              <option value="good">Tích cực</option>
+              <option value="neutral">Trung lập</option>
+              <option value="bad">Tiêu cực</option>
+            </select>
+            <select id="ratingFilter">
+              <option value="">Tất cả số sao</option>
+              <option value="5">5 sao</option>
+              <option value="4">4 sao</option>
+              <option value="3">3 sao</option>
+              <option value="2">2 sao</option>
+              <option value="1">1 sao</option>
+            </select>
+            <select id="sort">
+              <option value="created_at_desc">Mới nhất</option>
+              <option value="helpful_desc">Hữu ích nhất</option>
+              <option value="rating_desc">Sao cao nhất</option>
+              <option value="rating_asc">Sao thấp nhất</option>
+            </select>
+            <select id="pages">
+              <option value="1">Crawl 1 trang</option>
+              <option value="3" selected>Crawl 3 trang</option>
+              <option value="5">Crawl 5 trang</option>
+              <option value="10">Crawl 10 trang</option>
+            </select>
+            <button id="reloadBtn" disabled>Tải lại</button>
+            <button id="csvBtn" disabled>Xuất CSV</button>
+          </div>
+
+          <div style="overflow:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:112px;">Review ID</th>
+                  <th style="width:125px;">Phân loại</th>
+                  <th style="width:95px;">Số sao</th>
+                  <th>Đánh giá người dùng</th>
+                  <th style="width:125px;">Thời gian</th>
+                </tr>
+              </thead>
+              <tbody id="reviews"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <button id="prevBtn" disabled>Trang trước</button>
+            <button id="nextBtn" disabled>Trang sau</button>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    let selected = null;
+    let reviewPage = 1;
+    let lastReviews = [];
+    let isCrawling = false;
+    let isLoadingReviews = false;
+    window.currentProducts = [];
+
+    const $ = (id) => document.getElementById(id);
+    const fmt = new Intl.NumberFormat('vi-VN');
+
+    function setMessage(text, type = '') {
+      $('message').textContent = text;
+      $('message').className = 'message ' + type;
+    }
+
+    function syncActionState() {
+      const hasSelection = Boolean(selected);
+      $('crawlBtn').disabled = !hasSelection || isCrawling;
+      $('reloadBtn').disabled = !hasSelection || isLoadingReviews;
+      $('csvBtn').disabled = !hasSelection || !lastReviews.length;
+      $('pages').disabled = !hasSelection || isCrawling;
+    }
+
+    function stars(n) {
+      const rating = Number(n || 0);
+      return '*'.repeat(rating) + '-'.repeat(Math.max(0, 5 - rating));
+    }
+
+    function classifyRating(rating) {
+      const value = Number(rating || 0);
+      if (value >= 4) return { key: 'good', label: 'Tích cực' };
+      if (value === 3) return { key: 'neutral', label: 'Trung lập' };
+      return { key: 'bad', label: 'Tiêu cực' };
+    }
+
+    function dateText(value) {
+      if (!value) return '';
+      if (/^\d+$/.test(String(value))) {
+        return new Date(Number(value) * 1000).toLocaleDateString('vi-VN');
+      }
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('vi-VN');
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || 'Có lỗi khi gọi API');
+      return data;
+    }
+
+    async function checkHealth() {
+      try {
+        const data = await api('/api/health');
+        $('health').textContent = `SQLite: ${fmt.format(data.total_reviews)} review đã lưu`;
+      } catch (err) {
+        $('health').textContent = 'API chưa sẵn sàng';
+      }
+    }
+
+    function extractProductId(value) {
+      const text = value.trim();
+      if (/^\d{5,}$/.test(text)) return text;
+      const match = text.match(/(?:-p|product_id=)(\d{5,})/i);
+      return match ? match[1] : '';
+    }
+
+    async function searchProducts() {
+      const q = $('query').value.trim();
+      if (q.length < 2) {
+        setMessage('Vui lòng nhập tên sản phẩm, link Tiki hoặc product_id.', 'error');
+        return;
+      }
+
+      const directId = extractProductId(q);
+      if (directId) {
+        const product = {
+          product_id: directId,
+          spid: '',
+          name: `Tiki product ${directId}`,
+          brand: '',
+          price: 0,
+          rating_average: 0,
+          review_count: 0,
+          quantity_sold: '',
+          thumbnail_url: '',
+          url: q.startsWith('http') ? q : ''
+        };
+        renderProducts([product]);
+        selectProduct(0);
+        setMessage(`Đã nhận product_id ${directId}. Bấm Crawl review để lấy đánh giá thật.`, 'ok');
+        return;
+      }
+
+      $('searchBtn').disabled = true;
+      setMessage('Đang tìm sản phẩm thật trên Tiki...');
+      try {
+        const params = new URLSearchParams({ q, limit: '12' });
+        if ($('category').value) params.set('category', $('category').value);
+        const data = await api(`/api/tiki/search?${params.toString()}`);
+        renderProducts(data.items || []);
+        setMessage(`Tìm thấy ${fmt.format(data.total)} sản phẩm. Chọn một product_id để crawl review.`, 'ok');
+      } catch (err) {
+        renderProducts([]);
+        setMessage(err.message, 'error');
+      } finally {
+        $('searchBtn').disabled = false;
+      }
+    }
+
+    function renderProducts(products) {
+      $('productCount').textContent = fmt.format(products.length);
+      window.currentProducts = products;
+      if (!products.length) {
+        selected = null;
+        lastReviews = [];
+        syncActionState();
+        $('products').innerHTML = '<div class="empty">Chưa có sản phẩm. Hãy tìm bằng tên, link Tiki hoặc product_id.</div>';
+        return;
+      }
+
+      $('products').innerHTML = products.map((p, idx) => `
+        <article class="product" data-index="${idx}">
+          <img class="thumb" src="${p.thumbnail_url || ''}" alt="">
+          <div>
+            <div class="product-name">${escapeHtml(p.name || `Tiki product ${p.product_id}`)}</div>
+            <div class="meta">product_id: <code>${escapeHtml(p.product_id)}</code></div>
+            <div class="meta">spid: <code>${escapeHtml(p.spid || 'không có')}</code></div>
+            <div class="meta">${escapeHtml(p.brand || 'Không rõ hãng')} | ${fmt.format(p.price || 0)} đ | ${fmt.format(p.review_count || 0)} review | ${p.rating_average || 0}/5</div>
+            <div class="product-actions">
+              <button onclick="selectProduct(${idx})">Chọn</button>
+              ${p.url ? `<button onclick="window.open('${escapeAttr(p.url)}', '_blank')">Mở Tiki</button>` : ''}
+            </div>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function selectProduct(index) {
+      selected = window.currentProducts[index];
+      reviewPage = 1;
+      lastReviews = [];
+      document.querySelectorAll('.product').forEach(el => el.classList.remove('selected'));
+      document.querySelector(`.product[data-index="${index}"]`)?.classList.add('selected');
+      $('selectedName').textContent = selected.name || `Tiki product ${selected.product_id}`;
+      $('selectedMeta').textContent = `product_id: ${selected.product_id} | spid: ${selected.spid || 'không có'} | Tiki báo ${fmt.format(selected.review_count || 0)} review`;
+      $('sTiki').textContent = fmt.format(selected.review_count || 0);
+      $('sPages').textContent = $('pages').value;
+      syncActionState();
+      loadReviews();
+    }
+
+    async function crawlSelected() {
+      if (!selected) return;
+      const pages = Number($('pages').value || 3);
+      isCrawling = true;
+      syncActionState();
+      setMessage(`Đang crawl review thật cho product_id ${selected.product_id}...`);
+      try {
+        const data = await api('/api/tiki/crawl', {
+          method: 'POST',
+          body: JSON.stringify({
+            ...selected,
+            max_pages: pages
+          })
+        });
+        $('sPages').textContent = String(data.max_pages || pages);
+        const tikiTotal = data.summary_from_tiki?.reviews_count;
+        if (tikiTotal) $('sTiki').textContent = fmt.format(tikiTotal);
+        setMessage(`Crawl xong: lấy ${fmt.format(data.fetched)} review, lưu mới ${fmt.format(data.inserted)} review.`, 'ok');
+        reviewPage = 1;
+        await loadReviews();
+        await checkHealth();
+      } catch (err) {
+        setMessage(err.message, 'error');
+      } finally {
+        isCrawling = false;
+        syncActionState();
+      }
+    }
+
+    async function loadReviews() {
+      if (!selected) return;
+      isLoadingReviews = true;
+      syncActionState();
+      const rating = $('ratingFilter').value;
+      const classification = rating ? '' : $('classFilter').value;
+      const sort = $('sort').value;
+      const params = new URLSearchParams({ page: reviewPage, limit: 20, sort });
+      if (rating) params.set('rating', rating);
+      if (classification) params.set('classification', classification);
+
+      try {
+        const data = await api(`/api/products/${selected.product_id}/reviews?${params.toString()}`);
+        const summary = await api(`/api/analytics/summary?product_id=${selected.product_id}`);
+        lastReviews = data.items || [];
+        renderReviews(data);
+        renderStats(summary.stats || {});
+      } catch (err) {
+        setMessage(err.message, 'error');
+      } finally {
+        isLoadingReviews = false;
+        syncActionState();
+      }
+    }
+
+    async function reloadReviews() {
+      if (!selected) return;
+      reviewPage = 1;
+      setMessage(`Dang tai lai review local cho product_id ${selected.product_id}...`);
+      await loadReviews();
+      if (selected && !isCrawling) {
+        setMessage(`Da tai lai ${fmt.format(lastReviews.length)} review tren trang hien tai. Neu muon lay them du lieu tu Tiki, chon so trang roi bam Crawl review.`, 'ok');
+      }
+    }
+
+    function renderStats(stats) {
+      const distribution = stats.distribution || {};
+      const one = Number(distribution['1'] || 0);
+      const two = Number(distribution['2'] || 0);
+      const three = Number(distribution['3'] || 0);
+      const four = Number(distribution['4'] || 0);
+      const five = Number(distribution['5'] || 0);
+      const total = Number(stats.total || 0);
+
+      $('sTotal').textContent = fmt.format(total);
+      $('sAvg').textContent = Number(stats.avg_rating || 0).toFixed(1);
+      $('cGood').textContent = fmt.format(four + five);
+      $('cNeutral').textContent = fmt.format(three);
+      $('cBad').textContent = fmt.format(one + two);
+      renderRatingBreakdown(distribution, total);
+    }
+
+    function renderRatingBreakdown(distribution, total) {
+      $('ratingBreakdown').innerHTML = [5, 4, 3, 2, 1].map(star => {
+        const count = Number(distribution[String(star)] || 0);
+        const width = total ? Math.round((count / total) * 100) : 0;
+        return `
+          <div class="rating-row">
+            <div>${star} sao</div>
+            <div class="bar"><span style="width:${width}%"></span></div>
+            <div>${fmt.format(count)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderReviews(data) {
+      const items = data.items || [];
+
+      $('prevBtn').disabled = data.page <= 1;
+      $('nextBtn').disabled = data.page * data.limit >= data.total;
+
+      if (!items.length) {
+        $('reviews').innerHTML = '<tr><td colspan="5" class="empty">Chưa có review phù hợp. Bấm Crawl review để lấy dữ liệu thật từ Tiki hoặc đổi bộ lọc.</td></tr>';
+        return;
+      }
+
+      $('reviews').innerHTML = items.map(r => {
+        const cls = classifyRating(r.rating);
+        return `
+          <tr>
+            <td><code>${escapeHtml(r.review_id)}</code><div class="helpful">${fmt.format(r.helpful_count || 0)} hữu ích</div></td>
+            <td><span class="badge ${cls.key}">${cls.label}</span></td>
+            <td><div class="stars">${stars(r.rating)}</div><div class="helpful">${r.rating}/5</div></td>
+            <td>
+              <div class="review-title">${escapeHtml(r.title || 'Không có tiêu đề')}</div>
+              <div class="review-content">${escapeHtml(r.content || '')}</div>
+              ${(r.images || []).length ? `<div class="helpful">${(r.images || []).length} ảnh đính kèm</div>` : ''}
+            </td>
+            <td>${dateText(r.created_at)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function exportCSV() {
+      if (!lastReviews.length) return;
+      const rows = [
+        ['review_id', 'product_id', 'rating', 'classification', 'title', 'content', 'created_at', 'helpful_count'],
+        ...lastReviews.map(r => [
+          r.review_id,
+          r.product_id,
+          r.rating,
+          classifyRating(r.rating).label,
+          csvCell(r.title || ''),
+          csvCell(r.content || ''),
+          r.created_at || '',
+          r.helpful_count || 0
+        ])
+      ];
+      const csv = rows.map(row => row.join(',')).join('\n');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
+      link.download = `tiki_reviews_${selected.product_id}.csv`;
+      link.click();
+    }
+
+    function csvCell(value) {
+      return `"${String(value).replaceAll('"', '""').replace(/\s+/g, ' ').trim()}"`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replaceAll('`', '&#096;');
+    }
+
+    $('searchBtn').addEventListener('click', searchProducts);
+    $('query').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') searchProducts();
+    });
+    $('crawlBtn').addEventListener('click', crawlSelected);
+    $('reloadBtn').addEventListener('click', reloadReviews);
+    $('pages').addEventListener('change', () => {
+      $('sPages').textContent = $('pages').value;
+      if (selected) {
+        setMessage(`Da chon crawl ${fmt.format(Number($('pages').value || 3))} trang cho lan bam Crawl review tiep theo.`, 'ok');
+      }
+    });
+    $('classFilter').addEventListener('change', () => {
+      if ($('classFilter').value === 'good' || $('classFilter').value === 'bad') $('ratingFilter').value = '';
+      reviewPage = 1;
+      loadReviews();
+    });
+    $('ratingFilter').addEventListener('change', () => {
+      if ($('ratingFilter').value) $('classFilter').value = '';
+      reviewPage = 1;
+      loadReviews();
+    });
+    $('sort').addEventListener('change', () => { reviewPage = 1; loadReviews(); });
+    $('csvBtn').addEventListener('click', exportCSV);
+    $('prevBtn').addEventListener('click', () => { reviewPage -= 1; loadReviews(); });
+    $('nextBtn').addEventListener('click', () => { reviewPage += 1; loadReviews(); });
+
+    checkHealth();
+    renderProducts([]);
+    renderRatingBreakdown({}, 0);
+    syncActionState();
+  </script>
+</body>
+</html>
