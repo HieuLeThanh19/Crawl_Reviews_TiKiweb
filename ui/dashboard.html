@@ -55,7 +55,7 @@
       border-radius: 8px;
       padding: 14px;
       display: grid;
-      grid-template-columns: minmax(240px, 1fr) 150px 135px;
+      grid-template-columns: minmax(240px, 1fr) 190px 150px 135px;
       gap: 10px;
       align-items: center;
     }
@@ -239,6 +239,10 @@
       margin: 12px 0;
     }
 
+    .filters select, .filters button {
+      flex: 0 0 auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -307,13 +311,27 @@
 
   <main>
     <section class="toolbar">
-      <input id="query" placeholder="Nhập tên sản phẩm, link Tiki hoặc product_id" value="iphone">
+      <input id="query" placeholder="Nhập tên sản phẩm, link Tiki hoặc product_id" value="">
       <select id="category">
-        <option value="1789">Điện thoại</option>
-        <option value="1846">Laptop</option>
-        <option value="1815">Phụ kiện</option>
-        <option value="8322">Nhà sách</option>
         <option value="">Tất cả ngành hàng</option>
+        <option value="phones">Điện thoại - Phụ kiện</option>
+        <option value="computers">Laptop - Máy vi tính</option>
+        <option value="digital">Thiết bị số</option>
+        <option value="books">Nhà sách</option>
+        <option value="beauty">Làm đẹp - Sức khỏe</option>
+        <option value="home">Nhà cửa - Đời sống</option>
+        <option value="appliances">Điện gia dụng</option>
+        <option value="baby">Mẹ và bé</option>
+        <option value="fashion">Thời trang</option>
+        <option value="sports">Thể thao - Dã ngoại</option>
+        <option value="grocery">Bách hóa online</option>
+      </select>
+      <select id="searchPages">
+        <option value="1">Tìm 1 trang</option>
+        <option value="3">Tìm 3 trang</option>
+        <option value="5" selected>Tìm 5 trang</option>
+        <option value="10">Tìm 10 trang</option>
+        <option value="25">Tìm 25 trang</option>
       </select>
       <button class="primary" id="searchBtn">Tìm sản phẩm</button>
     </section>
@@ -342,10 +360,10 @@
         </div>
         <div class="panel-body">
           <div class="summary-grid">
-            <div class="stat"><div class="stat-value" id="sTotal">0</div><div class="stat-label">Review đã lưu</div></div>
+            <div class="stat"><div class="stat-value" id="sTotal">0</div><div class="stat-label">Review local hiện tại</div></div>
             <div class="stat"><div class="stat-value" id="sAvg">0.0</div><div class="stat-label">Sao trung bình local</div></div>
             <div class="stat"><div class="stat-value" id="sTiki">0</div><div class="stat-label">Review Tiki báo</div></div>
-            <div class="stat"><div class="stat-value" id="sPages">3</div><div class="stat-label">Trang crawl mỗi lần</div></div>
+            <div class="stat"><div class="stat-value" id="sPages">10</div><div class="stat-label">Trang crawl mỗi lần</div></div>
           </div>
 
           <div class="classification">
@@ -357,12 +375,6 @@
           <div class="rating-table" id="ratingBreakdown"></div>
 
           <div class="filters">
-            <select id="classFilter">
-              <option value="">Tất cả phân loại</option>
-              <option value="good">Tích cực</option>
-              <option value="neutral">Trung lập</option>
-              <option value="bad">Tiêu cực</option>
-            </select>
             <select id="ratingFilter">
               <option value="">Tất cả số sao</option>
               <option value="5">5 sao</option>
@@ -375,15 +387,22 @@
               <option value="created_at_desc">Mới nhất</option>
               <option value="helpful_desc">Hữu ích nhất</option>
               <option value="rating_desc">Sao cao nhất</option>
-              <option value="rating_asc">Sao thấp nhất</option>
             </select>
             <select id="pages">
               <option value="1">Crawl 1 trang</option>
-              <option value="3" selected>Crawl 3 trang</option>
+              <option value="3">Crawl 3 trang</option>
               <option value="5">Crawl 5 trang</option>
-              <option value="10">Crawl 10 trang</option>
+              <option value="10" selected>Crawl 10 trang</option>
+              <option value="20">Crawl 20 trang</option>
+              <option value="50">Crawl 50 trang</option>
+              <option value="100">Crawl 100 trang</option>
             </select>
-            <button id="reloadBtn" disabled>Tải lại</button>
+            <select id="reviewLimit">
+              <option value="20" selected>Hiện 20 dòng</option>
+              <option value="50">Hiện 50 dòng</option>
+              <option value="100">Hiện 100 dòng</option>
+            </select>
+            <button id="reloadBtn" disabled>Crawl lại</button>
             <button id="csvBtn" disabled>Xuất CSV</button>
           </div>
 
@@ -416,6 +435,7 @@
     let lastReviews = [];
     let isCrawling = false;
     let isLoadingReviews = false;
+    let canShowLocalReviews = false;
     window.currentProducts = [];
 
     const $ = (id) => document.getElementById(id);
@@ -429,8 +449,8 @@
     function syncActionState() {
       const hasSelection = Boolean(selected);
       $('crawlBtn').disabled = !hasSelection || isCrawling;
-      $('reloadBtn').disabled = !hasSelection || isLoadingReviews;
-      $('csvBtn').disabled = !hasSelection || !lastReviews.length;
+      $('reloadBtn').disabled = !hasSelection || isCrawling;
+      $('csvBtn').disabled = !hasSelection || !canShowLocalReviews || !lastReviews.length;
       $('pages').disabled = !hasSelection || isCrawling;
     }
 
@@ -511,11 +531,15 @@
       $('searchBtn').disabled = true;
       setMessage('Đang tìm sản phẩm thật trên Tiki...');
       try {
-        const params = new URLSearchParams({ q, limit: '12' });
+        const params = new URLSearchParams({
+          q,
+          limit: '40',
+          pages: $('searchPages').value || '5'
+        });
         if ($('category').value) params.set('category', $('category').value);
         const data = await api(`/api/tiki/search?${params.toString()}`);
         renderProducts(data.items || []);
-        setMessage(`Tìm thấy ${fmt.format(data.total)} sản phẩm. Chọn một product_id để crawl review.`, 'ok');
+        setMessage(`Tìm thấy ${fmt.format(data.total)} sản phẩm, đã xếp theo số review từ cao xuống thấp. Chọn một product_id để crawl review.`, 'ok');
       } catch (err) {
         renderProducts([]);
         setMessage(err.message, 'error');
@@ -527,9 +551,14 @@
     function renderProducts(products) {
       $('productCount').textContent = fmt.format(products.length);
       window.currentProducts = products;
+      selected = null;
+      canShowLocalReviews = false;
+      lastReviews = [];
+      reviewPage = 1;
+      $('selectedName').textContent = 'Chưa chọn sản phẩm';
+      $('selectedMeta').textContent = 'Tìm theo tên, dán link Tiki hoặc nhập thẳng product_id.';
+      clearReviewView();
       if (!products.length) {
-        selected = null;
-        lastReviews = [];
         syncActionState();
         $('products').innerHTML = '<div class="empty">Chưa có sản phẩm. Hãy tìm bằng tên, link Tiki hoặc product_id.</div>';
         return;
@@ -552,23 +581,39 @@
       `).join('');
     }
 
+    function clearReviewView() {
+      $('sTotal').textContent = '0';
+      $('sAvg').textContent = '0.0';
+      $('sTiki').textContent = selected ? fmt.format(selected.review_count || 0) : '0';
+      $('sPages').textContent = $('pages').value;
+      $('cGood').textContent = '0';
+      $('cNeutral').textContent = '0';
+      $('cBad').textContent = '0';
+      renderRatingBreakdown({}, 0);
+      $('reviews').innerHTML = '<tr><td colspan="5" class="empty">Chọn sản phẩm rồi bấm Crawl review. Bảng này sẽ không tự lấy dữ liệu cũ trước khi crawl.</td></tr>';
+      $('prevBtn').disabled = true;
+      $('nextBtn').disabled = true;
+    }
+
     function selectProduct(index) {
       selected = window.currentProducts[index];
       reviewPage = 1;
       lastReviews = [];
+      canShowLocalReviews = false;
       document.querySelectorAll('.product').forEach(el => el.classList.remove('selected'));
       document.querySelector(`.product[data-index="${index}"]`)?.classList.add('selected');
       $('selectedName').textContent = selected.name || `Tiki product ${selected.product_id}`;
       $('selectedMeta').textContent = `product_id: ${selected.product_id} | spid: ${selected.spid || 'không có'} | Tiki báo ${fmt.format(selected.review_count || 0)} review`;
       $('sTiki').textContent = fmt.format(selected.review_count || 0);
       $('sPages').textContent = $('pages').value;
+      clearReviewView();
+      setMessage(`Đã chọn product_id ${selected.product_id}. Bấm Crawl review để lấy dữ liệu thật từ Tiki.`, 'ok');
       syncActionState();
-      loadReviews();
     }
 
     async function crawlSelected() {
       if (!selected) return;
-      const pages = Number($('pages').value || 3);
+      const pages = Number($('pages').value || 10);
       isCrawling = true;
       syncActionState();
       setMessage(`Đang crawl review thật cho product_id ${selected.product_id}...`);
@@ -577,14 +622,26 @@
           method: 'POST',
           body: JSON.stringify({
             ...selected,
-            max_pages: pages
+            max_pages: pages,
+            replace_existing: true
           })
         });
         $('sPages').textContent = String(data.max_pages || pages);
-        const tikiTotal = data.summary_from_tiki?.reviews_count;
+        const apiTotal = Number(data.summary_from_tiki?.reviews_count || 0);
+        const listingTotal = Number(data.listing_review_count || selected.review_count || 0);
+        const tikiTotal = listingTotal || apiTotal;
         if (tikiTotal) $('sTiki').textContent = fmt.format(tikiTotal);
-        setMessage(`Crawl xong: lấy ${fmt.format(data.fetched)} review, lưu mới ${fmt.format(data.inserted)} review.`, 'ok');
+        const reachablePages = Number(data.reachable_pages || data.summary_from_tiki?.last_page || 0);
+        const note = apiTotal > listingTotal && listingTotal
+          ? ` API review public trả tổng gộp ${fmt.format(apiTotal)}, nhưng sản phẩm/link đang chọn báo ${fmt.format(listingTotal)} review nên app đã chặn local tối đa theo số này để tránh lệch dữ liệu.`
+          : tikiTotal && data.fetched < tikiTotal
+            ? ` Tiki báo ${fmt.format(tikiTotal)} review tổng, còn local là phần public API trả về và đã lưu được. Số trang public Tiki báo: ${fmt.format(reachablePages)}.`
+            : '';
+        setMessage(`Crawl xong: lấy ${fmt.format(data.fetched)} review, làm mới local ${fmt.format(data.inserted)} review.${note}`, 'ok');
+        $('sTotal').textContent = fmt.format(data.saved_stats?.total || data.inserted || data.fetched || 0);
+        renderStats(data.saved_stats || {});
         reviewPage = 1;
+        canShowLocalReviews = true;
         await loadReviews();
         await checkHealth();
       } catch (err) {
@@ -597,14 +654,17 @@
 
     async function loadReviews() {
       if (!selected) return;
+      if (!canShowLocalReviews) {
+        clearReviewView();
+        syncActionState();
+        return;
+      }
       isLoadingReviews = true;
       syncActionState();
       const rating = $('ratingFilter').value;
-      const classification = rating ? '' : $('classFilter').value;
       const sort = $('sort').value;
-      const params = new URLSearchParams({ page: reviewPage, limit: 20, sort });
+      const params = new URLSearchParams({ page: reviewPage, limit: $('reviewLimit').value || '20', sort });
       if (rating) params.set('rating', rating);
-      if (classification) params.set('classification', classification);
 
       try {
         const data = await api(`/api/products/${selected.product_id}/reviews?${params.toString()}`);
@@ -617,16 +677,6 @@
       } finally {
         isLoadingReviews = false;
         syncActionState();
-      }
-    }
-
-    async function reloadReviews() {
-      if (!selected) return;
-      reviewPage = 1;
-      setMessage(`Dang tai lai review local cho product_id ${selected.product_id}...`);
-      await loadReviews();
-      if (selected && !isCrawling) {
-        setMessage(`Da tai lai ${fmt.format(lastReviews.length)} review tren trang hien tai. Neu muon lay them du lieu tu Tiki, chon so trang roi bam Crawl review.`, 'ok');
       }
     }
 
@@ -666,7 +716,6 @@
 
       $('prevBtn').disabled = data.page <= 1;
       $('nextBtn').disabled = data.page * data.limit >= data.total;
-
       if (!items.length) {
         $('reviews').innerHTML = '<tr><td colspan="5" class="empty">Chưa có review phù hợp. Bấm Crawl review để lấy dữ liệu thật từ Tiki hoặc đổi bộ lọc.</td></tr>';
         return;
@@ -734,23 +783,18 @@
       if (event.key === 'Enter') searchProducts();
     });
     $('crawlBtn').addEventListener('click', crawlSelected);
-    $('reloadBtn').addEventListener('click', reloadReviews);
+    $('reloadBtn').addEventListener('click', crawlSelected);
     $('pages').addEventListener('change', () => {
       $('sPages').textContent = $('pages').value;
       if (selected) {
         setMessage(`Da chon crawl ${fmt.format(Number($('pages').value || 3))} trang cho lan bam Crawl review tiep theo.`, 'ok');
       }
     });
-    $('classFilter').addEventListener('change', () => {
-      if ($('classFilter').value === 'good' || $('classFilter').value === 'bad') $('ratingFilter').value = '';
-      reviewPage = 1;
-      loadReviews();
-    });
     $('ratingFilter').addEventListener('change', () => {
-      if ($('ratingFilter').value) $('classFilter').value = '';
       reviewPage = 1;
       loadReviews();
     });
+    $('reviewLimit').addEventListener('change', () => { reviewPage = 1; loadReviews(); });
     $('sort').addEventListener('change', () => { reviewPage = 1; loadReviews(); });
     $('csvBtn').addEventListener('click', exportCSV);
     $('prevBtn').addEventListener('click', () => { reviewPage -= 1; loadReviews(); });

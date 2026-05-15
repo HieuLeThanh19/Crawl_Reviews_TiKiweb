@@ -5,6 +5,7 @@ showing saved review data.
 from __future__ import annotations
 
 import os
+import sqlite3
 import sys
 from datetime import datetime
 from typing import Optional
@@ -40,7 +41,8 @@ app.add_middleware(
 
 class CrawlRequest(BaseModel):
     product_id: str
-    max_pages: int = Field(default=3, ge=1, le=50)
+    max_pages: int = Field(default=10, ge=1, le=100)
+    replace_existing: bool = True
     name: Optional[str] = None
     spid: Optional[str] = None
     url: Optional[str] = None
@@ -52,17 +54,28 @@ class CrawlRequest(BaseModel):
 
 @app.on_event("startup")
 def startup() -> None:
-    sqlite_store.init_db()
+    try:
+        sqlite_store.init_db()
+    except sqlite3.Error:
+        # Keep search/UI available even if SQLite is temporarily locked by OneDrive or another process.
+        pass
 
 
 @app.get("/api/health")
 def health_check():
-    sqlite_store.init_db()
+    db_error = None
+    total_reviews = 0
+    try:
+        sqlite_store.init_db()
+        total_reviews = sqlite_store.count_reviews()
+    except sqlite3.Error as exc:
+        db_error = str(exc)
     return {
-        "status": "ok",
+        "status": "ok" if db_error is None else "degraded",
         "db": "sqlite",
         "db_path": str(sqlite_store.DB_PATH),
-        "total_reviews": sqlite_store.count_reviews(),
+        "total_reviews": total_reviews,
+        "db_error": db_error,
         "timestamp": datetime.utcnow().isoformat(),
     }
 
@@ -72,12 +85,17 @@ def search_tiki_products(
     q: str = Query(..., min_length=2, description="Tên sản phẩm cần tìm trên Tiki"),
     limit: int = Query(10, ge=1, le=40),
     category: str = Query("", description="Category Tiki, bỏ trống để tìm tất cả"),
+    pages: int = Query(5, ge=1, le=25, description="Số trang kết quả Tiki cần gom"),
 ):
     """Search real Tiki products and return product ids visible to the user."""
     try:
-        products = TikiClient().search_products(q, limit=limit, category=category)
-        sqlite_store.save_products(products)
-        return {"query": q, "total": len(products), "items": products}
+        products = TikiClient().search_products(q, limit=limit, category=category, pages=pages)
+        try:
+            sqlite_store.save_products(products)
+        except sqlite3.Error:
+            # Search should still be usable when OneDrive or another process briefly locks SQLite.
+            pass
+        return {"query": q, "total": len(products), "pages": pages, "items": products}
     except RequestException as exc:
         raise HTTPException(status_code=502, detail=f"Không gọi được Tiki search API: {exc}") from exc
 
@@ -104,18 +122,28 @@ def crawl_tiki_reviews(payload: CrawlRequest):
     sqlite_store.save_product(product)
 
     try:
-        result = TikiClient().fetch_reviews(product_id, max_pages=payload.max_pages)
+        max_reviews = payload.review_count if payload.review_count and payload.review_count > 0 else None
+        result = TikiClient().fetch_reviews(
+            product_id,
+            max_pages=payload.max_pages,
+            max_reviews=max_reviews,
+        )
     except (RequestException, TikiClientError) as exc:
         raise HTTPException(status_code=502, detail=f"Không crawl được review từ Tiki: {exc}") from exc
 
+    deleted = sqlite_store.delete_reviews_for_product(product_id) if payload.replace_existing else 0
     inserted = sqlite_store.save_reviews(product_id, result["reviews"])
     stats = sqlite_store.product_stats(product_id)
     return {
         "product_id": product_id,
         "max_pages": payload.max_pages,
+        "replace_existing": payload.replace_existing,
         "fetched": len(result["reviews"]),
+        "deleted": deleted,
         "inserted": inserted,
         "summary_from_tiki": result["summary"],
+        "listing_review_count": max_reviews or 0,
+        "reachable_pages": result["summary"].get("last_page") or result["summary"].get("fetched_pages") or 0,
         "saved_stats": stats,
     }
 

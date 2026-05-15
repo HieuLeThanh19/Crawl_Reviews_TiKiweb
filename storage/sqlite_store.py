@@ -101,6 +101,13 @@ def save_product(product: dict[str, Any]) -> None:
     save_products([product])
 
 
+def delete_reviews_for_product(product_id: str) -> int:
+    init_db()
+    with _connect() as conn:
+        cursor = conn.execute("DELETE FROM reviews WHERE product_id = ?", (product_id,))
+        return cursor.rowcount or 0
+
+
 def save_reviews(product_id: str, reviews: list[dict[str, Any]]) -> int:
     if not reviews:
         return 0
