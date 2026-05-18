@@ -41,6 +41,7 @@ MAX_RETRIES        = int(os.getenv("MAX_RETRIES", 3))
 REQUEST_TIMEOUT    = int(os.getenv("REQUEST_TIMEOUT", 30))
 # Số đánh giá mỗi trang
 REVIEWS_PER_PAGE   = 20
+MAX_CRAWL_PAGES    = int(os.getenv("MAX_CRAWL_PAGES", 500))
 
 # User-Agent để tránh bị chặn — khai báo rõ ràng là bot nghiên cứu
 USER_AGENT = (

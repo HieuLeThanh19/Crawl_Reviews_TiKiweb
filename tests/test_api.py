@@ -17,6 +17,34 @@ pytest.importorskip("httpx")
 from fastapi.testclient import TestClient
 
 
+def test_fallback_positive_summary_uses_specific_praise():
+    from api.app import _fallback_positive_summary
+
+    reviews = [
+        {"rating": 5, "title": "Cuc ki hai long", "content": ""},
+        {"rating": 5, "title": "Cuc ki hai long", "content": "Đẹp và dễ thương như hình nha"},
+    ]
+
+    summary = _fallback_positive_summary(reviews, positive_total=2)
+
+    assert "Đẹp và dễ thương như hình nha" in summary
+    assert "chua du du lieu" not in summary.lower()
+
+
+def test_looks_like_no_data_detects_empty_positive_answer():
+    from api.app import _looks_like_no_data
+
+    assert _looks_like_no_data("Review hien co chua du du lieu de ket luan diem tich cuc ro rang.")
+
+
+def test_service_signal_detects_vietnamese_service_reviews():
+    from api.app import _has_service_signal
+
+    assert _has_service_signal({"title": "Rất hài lòng", "content": "Đóng gói kỹ, giao hàng nhanh"})
+    assert _has_service_signal({"title": "Không hài lòng", "content": "Shop xử lý chậm, chờ phản hồi lâu"})
+    assert not _has_service_signal({"title": "Màu đẹp", "content": "Sản phẩm dùng ổn"})
+
+
 def make_app_with_mock_db():
     """Tạo app với DB mock để test không cần PostgreSQL thật."""
     import unittest.mock as mock

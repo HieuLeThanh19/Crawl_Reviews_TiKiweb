@@ -1,0 +1,115 @@
+HUONG DAN CAP NHAT AI GEMINI CHO TIKI REVIEW SYSTEM
+Ngay tao: 2026-05-15
+
+1. TINH NANG DA THEM
+
+- Box "Tro ly AI tong hop danh gia" nam ben duoi khu vuc ten san pham/product_id, truoc cac thong ke review.
+- Nut "Tao tom tat" goi Gemini de doc review local da crawl va tra ve:
+  + ket luan chung ve san pham
+  + diem manh san pham
+  + diem can luu y/rui ro
+  + nhan xet ve giao hang/dich vu
+  + loi khuyen mua hang can bang
+- Hop chat noi "Tro ly AI" o goc phai man hinh.
+- Chat dung Google Gemini that, co context gom thong tin san pham, thong ke sao va review da crawl.
+- Neu hoi ve thong so/chat luong/giao hang/danh gia, AI se dua tren review local va thong tin san pham.
+- Neu hoi kien thuc chung nhu ngay gio, AI co the tra loi ngan gon.
+- Neu hoi qua xa chu de san pham, AI duoc prompt de tu choi lich su va huong ve san pham.
+
+2. FILE DA CAP NHAT
+
+- api/app.py
+  + Them ChatMessage, ChatRequest.
+  + Them helper goi Gemini bang GEMINI_API_KEY.
+  + Them endpoint GET /api/products/{product_id}/ai-summary.
+  + Them endpoint POST /api/chat.
+
+- ui/dashboard.html
+  + Them CSS cho box tom tat AI.
+  + Them HTML box tom tat AI o panel san pham/review.
+  + Them CSS/HTML/JS cho hop chat "Tro ly AI".
+  + Sau khi crawl xong, dashboard tu load review va goi AI tom tat.
+
+- requirements.txt
+  + Them google-generativeai==0.8.5.
+
+- .env.example
+  + Them GEMINI_API_KEY va GEMINI_MODEL.
+
+3. CAI THU VIEN
+
+Chay lenh:
+
+pip install -r requirements.txt
+
+Neu chi muon cai rieng thu vien AI:
+
+pip install google-generativeai==0.8.5
+
+4. CAU HINH GEMINI API KEY
+
+Mo file .env trong thu muc project va them:
+
+GEMINI_API_KEY=YOUR_REAL_GEMINI_API_KEY
+GEMINI_MODEL=gemini-1.5-flash
+
+Luu y bao mat:
+- Khong commit file .env len Git.
+- File .env da nam trong .gitignore.
+- Neu key da bi lo trong anh/chat, nen vao Google AI Studio tao key moi va xoa key cu.
+
+5. CHAY SERVER
+
+Vi du theo README cua project:
+
+uvicorn api.app:app --reload --host 127.0.0.1 --port 8010
+
+Mo trinh duyet:
+
+http://127.0.0.1:8010
+
+6. CACH DUNG TREN GIAO DIEN
+
+1. Nhap ten san pham, link Tiki hoac product_id.
+2. Chon dung san pham.
+3. Bam "Crawl review".
+4. Khi crawl xong, box "Tro ly AI tong hop danh gia" se tu goi Gemini va hien review chung.
+5. Bam nut tron "AI" goc phai de mo chat.
+6. Hoi vi du:
+   - San pham nay co dang mua khong?
+   - Review noi gi ve do ben?
+   - Co ai phan nan ve giao hang khong?
+   - Thong so/gia/sao cua san pham nay la gi?
+   - Bay gio la may gio?
+
+7. TEST API TRUC TIEP
+
+Test tom tat AI:
+
+curl http://127.0.0.1:8010/api/products/PRODUCT_ID/ai-summary
+
+Test chat AI:
+
+curl -X POST http://127.0.0.1:8010/api/chat ^
+  -H "Content-Type: application/json" ^
+  -d "{\"product_id\":\"PRODUCT_ID\",\"history\":[],\"message\":\"San pham nay co dang mua khong?\"}"
+
+8. CAC LOI THUONG GAP
+
+- "Chua cau hinh GEMINI_API_KEY trong file .env"
+  + Them GEMINI_API_KEY vao .env va khoi dong lai server.
+
+- "Chua cai thu vien google-generativeai"
+  + Chay pip install google-generativeai==0.8.5.
+
+- "Chua co review local"
+  + Can bam Crawl review truoc, vi AI tong hop dua tren review da luu trong SQLite.
+
+- Gemini bao loi quota/rate limit
+  + Doi mot luc roi goi lai, hoac kiem tra han muc Google AI Studio.
+
+9. GHI CHU KY THUAT
+
+- AI khong chi doi chieu text don gian. Backend gui prompt gom thong tin san pham, thong ke local va review that da crawl sang Gemini.
+- AI duoc yeu cau suy luan can than, noi ro khi review chua du thong tin, va khong bia thong so khong co trong context.
+- Endpoint chat khong co auth/rate limit. Neu public app ra internet, nen them gioi han request de tranh ton quota Gemini.

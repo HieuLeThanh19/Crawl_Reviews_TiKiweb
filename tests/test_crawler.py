@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from crawler.tiki_crawler import TikiCrawler
+from crawler.tiki_client import TikiClient, _is_relevant_product_match, _product_match_score, _raw_review_matches_selected
 from crawler.proxy_manager import ProxyManager
 
 
@@ -99,6 +100,123 @@ class TestProxyManager:
         status = pm.status()
         assert status["total"] == 2
         assert status["active"] == 2
+
+
+class FakeResponse:
+    encoding = "utf-8"
+
+    def __init__(self, payload):
+        self.payload = payload
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self.payload
+
+
+class FakeSession:
+    def __init__(self, payload):
+        self.payload = payload
+        self.calls = []
+        self.headers = {}
+        self.trust_env = False
+
+    def get(self, url, params=None, timeout=None):
+        self.calls.append({"url": url, "params": params or {}, "timeout": timeout})
+        return FakeResponse(self.payload)
+
+
+class TestTikiClientReviews:
+    def test_get_product_detail_normalizes_review_count_and_spid(self):
+        client = TikiClient()
+        client.session = FakeSession(
+            {
+                "id": "P001",
+                "name": "San pham that",
+                "seller_product_id": "S001",
+                "review_count": 42,
+                "rating_average": 4.8,
+                "url_path": "san-pham-that-pP001.html?spid=S001",
+            }
+        )
+
+        result = client.get_product_detail("P001", spid="S001")
+
+        assert client.session.calls[0]["params"]["spid"] == "S001"
+        assert result["product_id"] == "P001"
+        assert result["spid"] == "S001"
+        assert result["review_count"] == 42
+
+    def test_fetch_reviews_passes_spid_to_tiki_api(self):
+        client = TikiClient()
+        client.session = FakeSession(
+            {
+                "reviews_count": 1,
+                "rating_average": 5,
+                "paging": {"last_page": 1, "total": 1},
+                "data": [{"id": "R1", "rating": 5, "product_id": "P001", "spid": "S001"}],
+            }
+        )
+
+        result = client.fetch_reviews("P001", max_pages=1, spid="S001")
+
+        assert client.session.calls[0]["params"]["spid"] == "S001"
+        assert result["summary"]["filtered_mismatch_count"] == 0
+        assert len(result["reviews"]) == 1
+
+    def test_raw_review_mismatch_is_rejected_when_tiki_marks_another_listing(self):
+        assert _raw_review_matches_selected(
+            {"product_id": "P002", "spid": "S001"},
+            product_id="P001",
+            spid="S001",
+        )
+        assert not _raw_review_matches_selected(
+            {"product_id": "P001", "spid": "S002"},
+            product_id="P001",
+            spid="S001",
+        )
+        assert _raw_review_matches_selected(
+            {"id": "R1", "rating": 5},
+            product_id="P001",
+            spid="S001",
+        )
+
+    def test_phone_search_prefers_name_match_before_review_count(self):
+        phone = {
+            "name": "Điện thoại Samsung Galaxy A56 5G",
+            "brand": "Samsung",
+            "review_count": 120,
+            "rating_average": 4.7,
+        }
+        rice_cooker = {
+            "name": "Nồi Cơm Điện Mini Lock&Lock 0.8 lít",
+            "brand": "LocknLock",
+            "review_count": 312,
+            "rating_average": 4.8,
+        }
+
+        assert _is_relevant_product_match("điện thoại", phone, "phones")
+        assert not _is_relevant_product_match("điện thoại", rice_cooker, "phones")
+        assert _product_match_score("điện thoại", phone, "phones") > _product_match_score("điện thoại", rice_cooker, "phones")
+
+    def test_clothing_search_does_not_match_the_thao_substring(self):
+        shoe = {
+            "name": "Giày thể thao nữ đế êm nhẹ, thoáng khí",
+            "brand": "Bee Gee",
+            "review_count": 6,
+            "rating_average": 5,
+        }
+        shirt = {
+            "name": "Áo Thể Thao Nữ Basic V Neck",
+            "brand": "Just Feel Free",
+            "review_count": 5,
+            "rating_average": 5,
+        }
+
+        assert not _is_relevant_product_match("áo nữ", shoe, "")
+        assert _is_relevant_product_match("áo nữ", shirt, "")
+        assert _product_match_score("áo nữ", shirt, "") > _product_match_score("áo nữ", shoe, "")
 
 
 @pytest.mark.asyncio

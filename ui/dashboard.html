@@ -287,6 +287,188 @@
     .message.ok { color: var(--green); }
     .pager { display: flex; gap: 8px; justify-content: flex-end; padding-top: 12px; }
 
+    .ai-addon {
+      display: none;
+      margin: 12px;
+      padding: 14px 16px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+    .ai-addon.open { display: block; }
+
+    .ai-summary-box {
+      display: none;
+      border-left: 1px solid #edf1f5;
+      background: #fff;
+      padding: 4px 0 4px 16px;
+      margin: 0 0 14px 0;
+      line-height: 1.45;
+      color: #2b3340;
+    }
+    .ai-summary-box.open { display: block; }
+    .ai-summary-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .ai-summary-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+    .ai-summary-title a {
+      color: var(--blue);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .ai-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--blue);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0;
+      flex: 0 0 auto;
+    }
+    .ai-refresh {
+      display: none;
+      min-height: 28px;
+      padding: 0 9px;
+      font-size: 12px;
+      background: #fff;
+    }
+    .ai-summary-content {
+      max-width: 920px;
+      font-size: 14px;
+    }
+    .ai-summary-section { margin-top: 10px; }
+    .ai-summary-section-title {
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .ai-summary-count {
+      font-weight: 400;
+      color: var(--muted);
+    }
+    .ai-summary-line {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 2px;
+      margin: 2px 0;
+    }
+    .ai-summary-line .plus { color: var(--green); font-weight: 700; }
+    .ai-summary-line .minus { color: var(--orange); font-weight: 700; }
+    .ai-summary-feedback {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .ai-summary-feedback button {
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      padding: 0;
+      background: #fff;
+      color: #3f4857;
+      border-color: #dfe5ee;
+      font-size: 18px;
+      font-weight: 400;
+    }
+    .ai-summary-note { margin-top: 10px; color: var(--muted); font-size: 13px; }
+    .ai-summary-message { color: #374151; font-size: 14px; line-height: 1.5; }
+    .ai-summary-error { color: var(--red); font-size: 13px; }
+
+    .chat-window {
+      width: 100%;
+      height: 460px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+    .chat-window.open { display: flex; }
+    .chat-head {
+      background: #fff;
+      color: var(--text);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .chat-title { font-weight: 700; font-size: 14px; }
+    .chat-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .chat-close {
+      display: none;
+    }
+    .chat-anchor-title {
+      padding: 12px 16px 0 16px;
+      font-weight: 700;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f8fafc;
+    }
+    .chat-bubble {
+      max-width: 86%;
+      padding: 9px 11px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .chat-bubble.user {
+      align-self: flex-end;
+      background: var(--blue);
+      color: #fff;
+    }
+    .chat-bubble.ai {
+      align-self: flex-start;
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .chat-bubble.thinking { color: var(--muted); font-style: italic; }
+    .chat-input-row {
+      border-top: 1px solid var(--line);
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+    .chat-input-row textarea {
+      min-height: 40px;
+      max-height: 100px;
+      resize: none;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 10px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
     @media (max-width: 1080px) {
       .toolbar { grid-template-columns: 1fr; }
       .layout { grid-template-columns: 1fr; }
@@ -348,6 +530,34 @@
           <span class="panel-sub" id="productCount">0</span>
         </div>
         <div class="products" id="products"></div>
+        <div id="aiAddon" class="panel-body ai-addon">
+          <div id="aiSummaryBox" class="ai-summary-box">
+            <div class="ai-summary-head">
+              <div class="ai-summary-title"><span class="ai-mark">AI</span><span><a href="javascript:void(0)" id="aiTitleLink">Trợ lý AI</a> tổng hợp từ các đánh giá mới nhất</span></div>
+              <button class="ai-refresh" id="aiSummaryBtn" disabled>Tạo tóm tắt</button>
+            </div>
+            <div id="aiSummaryContent" class="ai-summary-note">Chọn sản phẩm và crawl review để AI tổng hợp nhận xét chung.</div>
+          </div>
+
+          <div id="aiChatSection" class="chat-window" aria-live="polite">
+            <div class="chat-anchor-title">Trợ lý AI</div>
+            <div class="chat-head">
+              <span class="ai-mark">AI</span>
+              <div>
+                <div class="chat-title">Trợ lý AI</div>
+                <div class="chat-sub" id="chatProductName">Hỏi về sản phẩm đang chọn</div>
+              </div>
+              <button id="chatClose" class="chat-close" title="Đóng">x</button>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+              <div class="chat-bubble ai">Chọn sản phẩm và crawl review, sau đó hỏi tôi về chất lượng, thông số, giao hàng hoặc đánh giá chung.</div>
+            </div>
+            <div class="chat-input-row">
+              <textarea id="chatInput" rows="1" placeholder="Nhập câu hỏi cho Trợ lý AI..."></textarea>
+              <button id="chatSend" class="primary">Gửi</button>
+            </div>
+          </div>
+        </div>
       </aside>
 
       <section class="panel">
@@ -360,10 +570,10 @@
         </div>
         <div class="panel-body">
           <div class="summary-grid">
-            <div class="stat"><div class="stat-value" id="sTotal">0</div><div class="stat-label">Review local hiện tại</div></div>
-            <div class="stat"><div class="stat-value" id="sAvg">0.0</div><div class="stat-label">Sao trung bình local</div></div>
+            <div class="stat"><div class="stat-value" id="sTotal">0</div><div class="stat-label">Đánh giá đã crawl</div></div>
+            <div class="stat"><div class="stat-value" id="sAvg">0.0</div><div class="stat-label">Sao trung bình</div></div>
             <div class="stat"><div class="stat-value" id="sTiki">0</div><div class="stat-label">Review Tiki báo</div></div>
-            <div class="stat"><div class="stat-value" id="sPages">10</div><div class="stat-label">Trang crawl mỗi lần</div></div>
+            <div class="stat"><div class="stat-value" id="sPages">Tối ưu</div><div class="stat-label">Chế độ crawl</div></div>
           </div>
 
           <div class="classification">
@@ -389,10 +599,11 @@
               <option value="rating_desc">Sao cao nhất</option>
             </select>
             <select id="pages">
+              <option value="0" selected>Crawl tối ưu</option>
               <option value="1">Crawl 1 trang</option>
               <option value="3">Crawl 3 trang</option>
               <option value="5">Crawl 5 trang</option>
-              <option value="10" selected>Crawl 10 trang</option>
+              <option value="10">Crawl 10 trang</option>
               <option value="20">Crawl 20 trang</option>
               <option value="50">Crawl 50 trang</option>
               <option value="100">Crawl 100 trang</option>
@@ -436,6 +647,9 @@
     let isCrawling = false;
     let isLoadingReviews = false;
     let canShowLocalReviews = false;
+    let chatHistory = [];
+    let isAiSummaryLoading = false;
+    let isChatSending = false;
     window.currentProducts = [];
 
     const $ = (id) => document.getElementById(id);
@@ -452,6 +666,8 @@
       $('reloadBtn').disabled = !hasSelection || isCrawling;
       $('csvBtn').disabled = !hasSelection || !canShowLocalReviews || !lastReviews.length;
       $('pages').disabled = !hasSelection || isCrawling;
+      $('aiSummaryBtn').disabled = !hasSelection || !canShowLocalReviews || isAiSummaryLoading;
+      $('chatSend').disabled = isChatSending;
     }
 
     function stars(n) {
@@ -485,6 +701,144 @@
       return data;
     }
 
+    function resetAiSummary(text = '') {
+      $('aiAddon').classList.remove('open');
+      $('aiSummaryBox').classList.remove('open');
+      $('aiSummaryContent').className = 'ai-summary-note';
+      $('aiSummaryContent').textContent = text;
+    }
+
+    function scrollToAiChat() {
+      $('aiChatSection').classList.add('open');
+      $('aiChatSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => $('chatInput').focus(), 450);
+    }
+
+    function renderAiSummary(summary) {
+      const cleanSummaryText = (value, fallback = '') => {
+        const text = String(value || fallback || '')
+          .replace(/\s+/g, ' ')
+          .replace(/\s*\.\s*\.\s*\.\s*\.*/g, '...')
+          .replace(/([,;:])\s*\.\.\.$/, '...')
+          .trim();
+        return text;
+      };
+      const safe = (value, fallback = '') => escapeHtml(cleanSummaryText(value, fallback));
+      const productNegative = summary.product_negative_summary || 'Chưa thấy nhận xét tiêu cực rõ ràng về sản phẩm trong review đã crawl.';
+      const servicePositive = summary.service_positive_summary || 'Review hiện có chưa nhắc nhiều về dịch vụ.';
+      const serviceNegative = summary.service_negative_summary || '';
+      $('aiAddon').classList.add('open');
+      $('aiSummaryBox').classList.add('open');
+      $('aiSummaryContent').className = 'ai-summary-content';
+      $('aiSummaryContent').innerHTML = `
+        <div class="ai-summary-section">
+          <div class="ai-summary-section-title">Về sản phẩm: <span class="ai-summary-count">(${fmt.format(summary.product_positive_count || 0)} tích cực, ${fmt.format(summary.product_negative_count || 0)} tiêu cực)</span></div>
+          <div class="ai-summary-line">
+            <span class="plus">+</span>
+            <span>${safe(summary.product_positive_summary, 'Review hiện có chưa đủ dữ liệu để kết luận điểm tích cực rõ ràng.')}</span>
+          </div>
+          <div class="ai-summary-line">
+            <span class="minus">−</span>
+            <span>${safe(productNegative)}</span>
+          </div>
+        </div>
+
+        <div class="ai-summary-section">
+          <div class="ai-summary-section-title">Về dịch vụ: <span class="ai-summary-count">(${fmt.format(summary.service_positive_count || 0)} tích cực, ${fmt.format(summary.service_negative_count || 0)} tiêu cực)</span></div>
+          <div class="ai-summary-line">
+            <span class="plus">+</span>
+            <span>${safe(servicePositive)}</span>
+          </div>
+          ${serviceNegative ? `
+          <div class="ai-summary-line">
+            <span class="minus">−</span>
+            <span>${safe(serviceNegative)}</span>
+          </div>
+          ` : ''}
+        </div>
+
+        <div class="ai-summary-feedback" aria-label="Phản hồi tóm tắt AI">
+          <button type="button" title="Tóm tắt hữu ích">👍</button>
+          <button type="button" title="Tóm tắt chưa hữu ích">👎</button>
+        </div>
+      `;
+    }
+
+    async function loadAiSummary() {
+      if (!selected || !canShowLocalReviews) {
+        resetAiSummary();
+        return;
+      }
+      isAiSummaryLoading = true;
+      syncActionState();
+      $('aiSummaryContent').className = 'ai-summary-note';
+      $('aiSummaryContent').textContent = 'Trợ lý AI đang đọc review và tổng hợp nhận xét...';
+      try {
+        const data = await api(`/api/products/${selected.product_id}/ai-summary`);
+        renderAiSummary(data.summary || {});
+      } catch (err) {
+        $('aiAddon').classList.add('open');
+        $('aiSummaryBox').classList.add('open');
+        $('aiSummaryContent').className = 'ai-summary-message';
+        $('aiSummaryContent').textContent = err.message;
+      } finally {
+        isAiSummaryLoading = false;
+        syncActionState();
+      }
+    }
+
+    function resetChat(product = null) {
+      chatHistory = [];
+      $('aiChatSection').classList.remove('open');
+      const productName = product ? (product.name || `Tiki product ${product.product_id}`) : 'Hỏi về sản phẩm đang chọn';
+      $('chatProductName').textContent = productName;
+      $('chatMessages').innerHTML = product
+        ? `<div class="chat-bubble ai">Tôi đã nhận context sản phẩm "${escapeHtml(productName)}". Bạn có thể hỏi về chất lượng, thông số, giao hàng hoặc review chung.</div>`
+        : '<div class="chat-bubble ai">Chọn sản phẩm và crawl review, sau đó hỏi tôi về chất lượng, thông số, giao hàng hoặc đánh giá chung.</div>';
+    }
+
+    function appendChatBubble(role, text) {
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble ${role}`;
+      bubble.textContent = text;
+      $('chatMessages').appendChild(bubble);
+      $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+      return bubble;
+    }
+
+    async function sendChat() {
+      const message = $('chatInput').value.trim();
+      if (!message) return;
+      $('chatInput').value = '';
+      appendChatBubble('user', message);
+      const thinking = appendChatBubble('ai thinking', 'Đang suy nghĩ...');
+      isChatSending = true;
+      syncActionState();
+      try {
+        const data = await api('/api/chat', {
+          method: 'POST',
+          body: JSON.stringify({
+            product_id: selected ? selected.product_id : '',
+            history: chatHistory,
+            message
+          })
+        });
+        thinking.remove();
+        const reply = data.reply || 'Tôi chưa có câu trả lời phù hợp.';
+        appendChatBubble('ai', reply);
+        chatHistory.push({ role: 'user', content: message });
+        chatHistory.push({ role: 'model', content: reply });
+        if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+      } catch (err) {
+        thinking.remove();
+        appendChatBubble('ai', err.message);
+      } finally {
+        isChatSending = false;
+        syncActionState();
+        $('chatInput').focus();
+      }
+    }
+
     async function checkHealth() {
       try {
         const data = await api('/api/health');
@@ -501,6 +855,12 @@
       return match ? match[1] : '';
     }
 
+    function extractSpid(value) {
+      const text = value.trim();
+      const match = text.match(/[?&]spid=(\d{5,})/i);
+      return match ? match[1] : '';
+    }
+
     async function searchProducts() {
       const q = $('query').value.trim();
       if (q.length < 2) {
@@ -512,7 +872,7 @@
       if (directId) {
         const product = {
           product_id: directId,
-          spid: '',
+          spid: extractSpid(q),
           name: `Tiki product ${directId}`,
           brand: '',
           price: 0,
@@ -539,7 +899,7 @@
         if ($('category').value) params.set('category', $('category').value);
         const data = await api(`/api/tiki/search?${params.toString()}`);
         renderProducts(data.items || []);
-        setMessage(`Tìm thấy ${fmt.format(data.total)} sản phẩm, đã xếp theo số review từ cao xuống thấp. Chọn một product_id để crawl review.`, 'ok');
+        setMessage(`Tìm thấy ${fmt.format(data.total)} sản phẩm.`, 'ok');
       } catch (err) {
         renderProducts([]);
         setMessage(err.message, 'error');
@@ -558,6 +918,8 @@
       $('selectedName').textContent = 'Chưa chọn sản phẩm';
       $('selectedMeta').textContent = 'Tìm theo tên, dán link Tiki hoặc nhập thẳng product_id.';
       clearReviewView();
+      resetAiSummary();
+      resetChat();
       if (!products.length) {
         syncActionState();
         $('products').innerHTML = '<div class="empty">Chưa có sản phẩm. Hãy tìm bằng tên, link Tiki hoặc product_id.</div>';
@@ -585,7 +947,7 @@
       $('sTotal').textContent = '0';
       $('sAvg').textContent = '0.0';
       $('sTiki').textContent = selected ? fmt.format(selected.review_count || 0) : '0';
-      $('sPages').textContent = $('pages').value;
+      $('sPages').textContent = $('pages').value === '0' ? 'Tối ưu' : $('pages').value;
       $('cGood').textContent = '0';
       $('cNeutral').textContent = '0';
       $('cBad').textContent = '0';
@@ -602,10 +964,12 @@
       canShowLocalReviews = false;
       document.querySelectorAll('.product').forEach(el => el.classList.remove('selected'));
       document.querySelector(`.product[data-index="${index}"]`)?.classList.add('selected');
+      resetAiSummary('Crawl review xong, Trợ lý AI sẽ tổng hợp nhận xét cho sản phẩm này.');
+      resetChat(selected);
       $('selectedName').textContent = selected.name || `Tiki product ${selected.product_id}`;
       $('selectedMeta').textContent = `product_id: ${selected.product_id} | spid: ${selected.spid || 'không có'} | Tiki báo ${fmt.format(selected.review_count || 0)} review`;
       $('sTiki').textContent = fmt.format(selected.review_count || 0);
-      $('sPages').textContent = $('pages').value;
+      $('sPages').textContent = $('pages').value === '0' ? 'Tối ưu' : $('pages').value;
       clearReviewView();
       setMessage(`Đã chọn product_id ${selected.product_id}. Bấm Crawl review để lấy dữ liệu thật từ Tiki.`, 'ok');
       syncActionState();
@@ -616,7 +980,7 @@
       const pages = Number($('pages').value || 10);
       isCrawling = true;
       syncActionState();
-      setMessage(`Đang crawl review thật cho product_id ${selected.product_id}...`);
+      setMessage(`Đang crawl review cho product_id ${selected.product_id}...`);
       try {
         const data = await api('/api/tiki/crawl', {
           method: 'POST',
@@ -626,23 +990,20 @@
             replace_existing: true
           })
         });
-        $('sPages').textContent = String(data.max_pages || pages);
+        $('sPages').textContent = pages === 0 ? 'Tối ưu' : String(data.max_pages || pages);
         const apiTotal = Number(data.summary_from_tiki?.reviews_count || 0);
         const listingTotal = Number(data.listing_review_count || selected.review_count || 0);
         const tikiTotal = listingTotal || apiTotal;
         if (tikiTotal) $('sTiki').textContent = fmt.format(tikiTotal);
-        const reachablePages = Number(data.reachable_pages || data.summary_from_tiki?.last_page || 0);
-        const note = apiTotal > listingTotal && listingTotal
-          ? ` API review public trả tổng gộp ${fmt.format(apiTotal)}, nhưng sản phẩm/link đang chọn báo ${fmt.format(listingTotal)} review nên app đã chặn local tối đa theo số này để tránh lệch dữ liệu.`
-          : tikiTotal && data.fetched < tikiTotal
-            ? ` Tiki báo ${fmt.format(tikiTotal)} review tổng, còn local là phần public API trả về và đã lưu được. Số trang public Tiki báo: ${fmt.format(reachablePages)}.`
-            : '';
-        setMessage(`Crawl xong: lấy ${fmt.format(data.fetched)} review, làm mới local ${fmt.format(data.inserted)} review.${note}`, 'ok');
+        const crawled = Number(data.inserted || data.fetched || 0);
+        const totalText = tikiTotal ? fmt.format(tikiTotal) : 'chưa rõ';
+        setMessage(`Crawl xong: ${fmt.format(crawled)}/${totalText} đánh giá Tiki báo.`, 'ok');
         $('sTotal').textContent = fmt.format(data.saved_stats?.total || data.inserted || data.fetched || 0);
         renderStats(data.saved_stats || {});
         reviewPage = 1;
         canShowLocalReviews = true;
         await loadReviews();
+        await loadAiSummary();
         await checkHealth();
       } catch (err) {
         setMessage(err.message, 'error');
@@ -785,9 +1146,11 @@
     $('crawlBtn').addEventListener('click', crawlSelected);
     $('reloadBtn').addEventListener('click', crawlSelected);
     $('pages').addEventListener('change', () => {
-      $('sPages').textContent = $('pages').value;
+      $('sPages').textContent = $('pages').value === '0' ? 'Tối ưu' : $('pages').value;
       if (selected) {
-        setMessage(`Da chon crawl ${fmt.format(Number($('pages').value || 3))} trang cho lan bam Crawl review tiep theo.`, 'ok');
+        const selectedPages = Number($('pages').value || 0);
+        const label = selectedPages === 0 ? 'tối ưu' : `${fmt.format(selectedPages)} trang`;
+        setMessage(`Đã chọn chế độ crawl ${label}.`, 'ok');
       }
     });
     $('ratingFilter').addEventListener('change', () => {
@@ -799,6 +1162,19 @@
     $('csvBtn').addEventListener('click', exportCSV);
     $('prevBtn').addEventListener('click', () => { reviewPage -= 1; loadReviews(); });
     $('nextBtn').addEventListener('click', () => { reviewPage += 1; loadReviews(); });
+    $('aiSummaryBtn').addEventListener('click', loadAiSummary);
+    $('aiTitleLink').addEventListener('click', scrollToAiChat);
+    $('chatSend').addEventListener('click', sendChat);
+    $('chatInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendChat();
+      }
+    });
+    $('chatInput').addEventListener('input', () => {
+      $('chatInput').style.height = 'auto';
+      $('chatInput').style.height = Math.min($('chatInput').scrollHeight, 100) + 'px';
+    });
 
     checkHealth();
     renderProducts([]);
